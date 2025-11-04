@@ -36,6 +36,7 @@ app.use(express.urlencoded({ extended: false }));
 // Mount routers
 app.use('/api/auth', auth);
 app.use('/api/users', users);
+app.use('/api/public', require('./routes/public'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

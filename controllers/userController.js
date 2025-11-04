@@ -279,10 +279,52 @@ const deactivateUser = async (req, res) => {
   }
 };
 
+// @desc    Check if user exists by email
+// @route   GET /api/users/check-email/:email
+// @access  Public
+const checkUserExists = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    // Basic email validation
+    if (!email || !validator.isEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        exists: false,
+        error: 'Please provide a valid email address'
+      });
+    }
+
+    // Check if user exists with this email
+    const user = await User.findOne({ 
+      email: email.toLowerCase(),
+      isActive: true 
+    });
+
+    // Return boolean response
+    res.status(200).json({
+      success: true,
+      exists: !!user, // Convert to boolean
+      data: {
+        email: email.toLowerCase(),
+        exists: !!user
+      }
+    });
+
+  } catch (error) {
+    console.error('Check user exists error:', error);
+    res.status(500).json({
+      success: false,
+      exists: false,
+      error: 'Server error while checking user existence'
+    });
+  }
+};
 module.exports = {
   getUsers,
   getUser,
   updateUser,
   deleteUser,
-  deactivateUser
+  deactivateUser,
+  checkUserExists
 };

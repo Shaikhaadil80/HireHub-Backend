@@ -4,7 +4,8 @@ const {
   getUser,
   updateUser,
   deleteUser,
-  deactivateUser
+  deactivateUser,
+  checkUserExists 
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -17,5 +18,7 @@ router.get('/:id', getUser);
 router.put('/:id', updateUser);
 router.delete('/:id', authorize('admin'), deleteUser);
 router.put('/:id/deactivate', authorize('admin'), deactivateUser);
+// Public route - no authentication needed
+router.get('/check-email/:email', checkUserExists);
 
 module.exports = router;
