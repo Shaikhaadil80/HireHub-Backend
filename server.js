@@ -28,6 +28,19 @@ app.use(limiter);
 
 // CORS
 app.use(cors()); 
+// app.use(cors({
+//   origin: [
+//     'http://10.94.120.158:5000',
+//     'http://localhost:8081',
+//     'http://192.168.1.100:3000', // Your React Native dev server
+//     'http://192.168.1.100:5000', // Your backend
+//     'exp://192.168.1.100:19000', // Expo
+//     // Add your specific IPs here
+//   ],
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+// }));
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));

@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const validator = require('validator');
 
 const userSchema = new mongoose.Schema({
   uid: {
     type: String,
-    required: true,
+    required: [true, 'Firebase UID is required'],
     unique: true,
     trim: true
   },
@@ -27,6 +26,7 @@ const userSchema = new mongoose.Schema({
   },
   profileImageUrl: {
     type: String,
+    default: '',
     validate: {
       validator: function(v) {
         return v === '' || validator.isURL(v);
@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema({
   },
   profileImageThumbUrl: {
     type: String,
+    default: '',
     validate: {
       validator: function(v) {
         return v === '' || validator.isURL(v);
@@ -61,17 +62,11 @@ const userSchema = new mongoose.Schema({
     validate: [validator.isEmail, 'Please provide a valid email'],
     maxlength: [50, 'Email cannot exceed 50 characters']
   },
-  password: {
+  // Removed password field since we're using Firebase Auth
+  firebaseProvider: {
     type: String,
-    required: function() {
-      return !this.googleId; // Password not required for Google auth
-    },
-    minlength: [6, 'Password must be at least 6 characters'],
-    select: false
-  },
-  googleId: {
-    type: String,
-    sparse: true
+    enum: ['password', 'google.com', 'facebook.com', 'apple.com'],
+    default: 'password'
   },
   createdAt: {
     type: Date,
@@ -117,46 +112,16 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ uid: 1 });
+// Indexes for better query performance
+userSchema.index({ uid: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ userType: 1 });
 userSchema.index({ isActive: 1 });
-
-// Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
 
 // Pre-save middleware to update updatedAt
 userSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
-
-// Instance method to check password
-userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
-  return await bcrypt.compare(candidatePassword, userPassword);
-};
-
-// Instance method to generate UID
-userSchema.methods.generateUID = function() {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  return `user_${timestamp}_${randomStr}`;
-};
-
-// Static method to find active users
-userSchema.statics.findActiveUsers = function() {
-  return this.find({ isActive: true });
-};
 
 module.exports = mongoose.model('User', userSchema);

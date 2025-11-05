@@ -1,118 +1,132 @@
 const User = require('../models/User');
 const { updateUserValidation } = require('../utils/validation');
 
-// @desc    Get all users (with filtering, sorting, pagination)
-// @route   GET /api/users
-// @access  Private/Admin
-const getUsers = async (req, res) => {
+// @desc    Create user profile after Firebase auth
+// @route   POST /api/users
+// @access  Private (Firebase authenticated)
+const createUser = async (req, res) => {
   try {
     const {
-      page = 1,
-      limit = 10,
-      sort = '-createdAt',
+      userName,
       userType,
-      isActive,
-      search
-    } = req.query;
+      profileImageUrl,
+      profileImageThumbUrl,
+      mobileNo,
+      email,
+      subscriptionTillDate,
+      subscriptionId
+    } = req.body;
 
-    // Build query
-    let query = {};
-
-    // Filter by userType
-    if (userType) {
-      query.userType = userType;
-    }
-
-    // Filter by active status
-    if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
-    }
-
-    // Search in username and email
-    if (search) {
-      query.$or = [
-        { userName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // Execute query with pagination
-    const users = await User.find(query)
-      .sort(sort)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .select('-password');
-
-    // Get total count for pagination
-    const total = await User.countDocuments(query);
-
-    res.status(200).json({
-      success: true,
-      data: users,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-
-  } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error while fetching users'
-    });
-  }
-};
-
-// @desc    Get single user
-// @route   GET /api/users/:id
-// @access  Private
-const getUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    // Check if user has permission (admin or own profile)
-    if (req.user.userType !== 'admin' && req.user.id !== user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to access this user'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: user
-    });
-
-  } catch (error) {
-    console.error('Get user error:', error);
-    if (error.name === 'CastError') {
+    // Check if user already exists with this UID
+    const existingUser = await User.findOne({ uid: req.firebaseUser.uid });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid user ID format'
+        error: 'User profile already exists'
       });
     }
+
+    // Check if email or mobile already exists
+    const duplicateUser = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { mobileNo: mobileNo }
+      ]
+    });
+
+    if (duplicateUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this email or mobile number already exists'
+      });
+    }
+
+    // Create new user
+    const user = await User.create({
+      uid: req.firebaseUser.uid,
+      userName,
+      userType,
+      profileImageUrl: profileImageUrl || '',
+      profileImageThumbUrl: profileImageThumbUrl || '',
+      mobileNo,
+      email: email.toLowerCase(),
+      createdBy: req.firebaseUser.uid,
+      subscriptionTillDate,
+      subscriptionId,
+      emailVerified: req.firebaseUser.email_verified || false,
+      firebaseProvider: req.firebaseUser.firebase.sign_in_provider
+    });
+
+    res.status(201).json({
+      success: true,
+      data: user,
+      message: 'User profile created successfully'
+    });
+
+  } catch (error) {
+    console.error('Create user error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this UID, email or mobile number already exists'
+      });
+    }
+
     res.status(500).json({
       success: false,
-      error: 'Server error while fetching user'
+      error: 'Server error while creating user profile'
     });
   }
 };
 
-// @desc    Update user
-// @route   PUT /api/users/:id
-// @access  Private
+// @desc    Get current user profile
+// @route   GET /api/users/me
+// @access  Private (Firebase authenticated)
+const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User profile not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: req.user
+    });
+
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching user profile'
+    });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/me
+// @access  Private (Firebase authenticated)
 const updateUser = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User profile not found'
+      });
+    }
+
     // Validate request data
     const { error } = updateUserValidation(req.body);
     if (error) {
@@ -123,188 +137,86 @@ const updateUser = async (req, res) => {
       });
     }
 
-    let user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    // Check if user has permission (admin or own profile)
-    if (req.user.userType !== 'admin' && req.user.id !== user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to update this user'
-      });
-    }
-
-    // Prevent certain fields from being updated
-    const restrictedFields = ['_id', 'uid', 'createdAt', 'createdBy', 'password'];
+    // Prevent updating restricted fields
+    const restrictedFields = ['_id', 'uid', 'email', 'createdAt', 'createdBy'];
     restrictedFields.forEach(field => delete req.body[field]);
 
-    // Check for duplicate email or mobile
-    if (req.body.email || req.body.mobileNo) {
-      const duplicateQuery = {
-        _id: { $ne: user._id },
-        $or: []
-      };
+    // Check for duplicate mobile number
+    if (req.body.mobileNo) {
+      const duplicateUser = await User.findOne({
+        mobileNo: req.body.mobileNo,
+        _id: { $ne: req.user._id }
+      });
 
-      if (req.body.email) {
-        duplicateQuery.$or.push({ email: req.body.email });
-      }
-      if (req.body.mobileNo) {
-        duplicateQuery.$or.push({ mobileNo: req.body.mobileNo });
-      }
-
-      const duplicateUser = await User.findOne(duplicateQuery);
       if (duplicateUser) {
         return res.status(400).json({
           success: false,
-          error: 'Email or mobile number already exists'
+          error: 'Mobile number already exists'
         });
       }
     }
 
     // Set updatedBy
-    req.body.updatedBy = req.user.id;
+    req.body.updatedBy = req.firebaseUser.uid;
 
     // Update user
-    user = await User.findByIdAndUpdate(
-      req.params.id,
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
       req.body,
       {
         new: true,
         runValidators: true
       }
-    ).select('-password');
+    );
 
     res.status(200).json({
       success: true,
       data: user,
-      message: 'User updated successfully'
+      message: 'User profile updated successfully'
     });
 
   } catch (error) {
     console.error('Update user error:', error);
-    if (error.name === 'CastError') {
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        error: 'Invalid user ID format'
+        error: 'Validation failed',
+        details: errors
       });
     }
+
     res.status(500).json({
       success: false,
-      error: 'Server error while updating user'
+      error: 'Server error while updating user profile'
     });
   }
 };
 
-// @desc    Delete user
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
-const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    // Prevent self-deletion
-    if (req.user.id === user.id) {
-      return res.status(400).json({
-        success: false,
-        error: 'You cannot delete your own account'
-      });
-    }
-
-    await User.findByIdAndDelete(req.params.id);
-
-    res.status(200).json({
-      success: true,
-      data: {},
-      message: 'User deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Delete user error:', error);
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid user ID format'
-      });
-    }
-    res.status(500).json({
-      success: false,
-      error: 'Server error while deleting user'
-    });
-  }
-};
-
-// @desc    Deactivate user
-// @route   PUT /api/users/:id/deactivate
-// @access  Private/Admin
-const deactivateUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    user.isActive = false;
-    user.updatedBy = req.user.id;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      data: user,
-      message: 'User deactivated successfully'
-    });
-
-  } catch (error) {
-    console.error('Deactivate user error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error while deactivating user'
-    });
-  }
-};
-
-// @desc    Check if user exists by email
+// @desc    Check if user exists by email (public)
 // @route   GET /api/users/check-email/:email
 // @access  Public
 const checkUserExists = async (req, res) => {
   try {
     const { email } = req.params;
 
-    // Basic email validation
-    if (!email || !validator.isEmail(email)) {
+    if (!email) {
       return res.status(400).json({
         success: false,
         exists: false,
-        error: 'Please provide a valid email address'
+        error: 'Email is required'
       });
     }
 
-    // Check if user exists with this email
     const user = await User.findOne({ 
       email: email.toLowerCase(),
       isActive: true 
     });
 
-    // Return boolean response
     res.status(200).json({
       success: true,
-      exists: !!user, // Convert to boolean
+      exists: !!user,
       data: {
         email: email.toLowerCase(),
         exists: !!user
@@ -320,11 +232,85 @@ const checkUserExists = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+// @access  Private (Firebase authenticated)
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Basic authorization - users can only see their own profile or admin can see all
+    if (req.user.uid !== user.uid && req.user.userType !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to access this user'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching user'
+    });
+  }
+};
+
+
+// @desc    Check if user profile exists by Firebase UID
+// @route   GET /api/users/check-profile/:uid
+// @access  Private (Firebase authenticated)
+const checkUserProfileExists = async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const user = await User.findOne({ 
+      uid: uid,
+      isActive: true 
+    });
+
+    res.status(200).json({
+      success: true,
+      exists: !!user,
+      data: user || null
+    });
+
+  } catch (error) {
+    console.error('Check user profile exists error:', error);
+    res.status(500).json({
+      success: false,
+      exists: false,
+      error: 'Server error while checking user profile'
+    });
+  }
+};
+
 module.exports = {
-  getUsers,
-  getUser,
+  createUser,
+  getCurrentUser,
   updateUser,
-  deleteUser,
-  deactivateUser,
-  checkUserExists
+  checkUserExists,
+  getUserById,
+  checkUserProfileExists
 };

@@ -1,24 +1,30 @@
 const express = require('express');
 const {
-  getUsers,
-  getUser,
+  createUser,
+  getCurrentUser,
   updateUser,
-  deleteUser,
-  deactivateUser,
-  checkUserExists 
+  checkUserExists,
+  getUserById,
+  checkUserProfileExists
 } = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/auth');
+const { verifyFirebaseToken, requireUserInDB } = require('../middleware/firebaseAuth');
 
 const router = express.Router();
 
-router.use(protect);
-
-router.get('/', authorize('admin'), getUsers);
-router.get('/:id', getUser);
-router.put('/:id', updateUser);
-router.delete('/:id', authorize('admin'), deleteUser);
-router.put('/:id/deactivate', authorize('admin'), deactivateUser);
-// Public route - no authentication needed
+// Public routes
 router.get('/check-email/:email', checkUserExists);
+
+// Firebase protected routes
+router.use(verifyFirebaseToken);
+
+
+// Profile check route (used by frontend)
+router.get('/check-profile/:uid', checkUserProfileExists);
+
+// User profile management
+router.post('/', createUser);
+router.get('/me', requireUserInDB, getCurrentUser);
+router.put('/me', requireUserInDB, updateUser);
+router.get('/:id', requireUserInDB, getUserById);
 
 module.exports = router;
