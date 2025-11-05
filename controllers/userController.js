@@ -16,7 +16,7 @@ const createUser = async (req, res) => {
       subscriptionTillDate,
       subscriptionId
     } = req.body;
-
+console.log("userType",userType);
     // Check if user already exists with this UID
     const existingUser = await User.findOne({ uid: req.firebaseUser.uid });
     if (existingUser) {
