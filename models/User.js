@@ -19,8 +19,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'User type is required'],
     enum: {
-      values: ['candidate', 'vender', 'admin'],
-      message: 'User type must be candidate, vender, or admin'
+      values: ['candidate', 'vendor', 'admin'],
+      message: 'User type must be candidate, vendor, or admin'
     },
     maxlength: [10, 'User type cannot exceed 10 characters']
   },
