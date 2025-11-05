@@ -56,10 +56,10 @@ const registerValidation = (data) => {
     //   }),
 
     userType: Joi.string()
-      .valid('candidate', 'employer', 'admin')
+      .valid('candidate', 'vender', 'admin')
       .required()
       .messages({
-        'any.only': 'User type must be candidate, employer, or admin',
+        'any.only': 'User type must be candidate, vender, or admin',
         'any.required': 'User type is required'
       }),
 
@@ -113,7 +113,7 @@ const updateUserValidation = (data) => {
       }),
 
     userType: Joi.string()
-      .valid('candidate', 'employer', 'admin'),
+      .valid('candidate', 'vender', 'admin'),
 
     profileImageUrl: Joi.string()
       .uri()
