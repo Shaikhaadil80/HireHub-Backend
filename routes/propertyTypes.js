@@ -19,8 +19,8 @@ router.get('/active', getPropertyTypes);
 router.use(verifyFirebaseToken);
 router.use(requireUserInDB);
 
-// Admin only routes
-router.use(authorize('admin'));
+// // Admin only routes
+// router.use(authorize('admin'));
 
 router.get('/', getPropertyTypes);
 router.get('/:id', getPropertyType);
