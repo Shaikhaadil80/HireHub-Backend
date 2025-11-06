@@ -1,6 +1,110 @@
 const PropertyType = require('../models/PropertyType');
 const { uploadToFirebase, deleteFromFirebase } = require('../config/firebaseStorage');
 
+// @desc    Get all property types (with filtering, sorting, pagination)
+// @route   GET /api/property-types
+// @access  Public for active, Private/Admin for all
+const getPropertyTypes = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      sort = 'name',
+      isActive,
+      search
+    } = req.query;
+
+    // Build query
+    let query = {};
+
+    // If not admin, only show active property types
+    if (req.user && req.user.userType !== 'admin') {
+      query.isActive = true;
+    }
+
+    // Filter by active status if provided (admin only)
+    if (isActive !== undefined && req.user && req.user.userType === 'admin') {
+      query.isActive = isActive === 'true';
+    }
+
+    // Search in name and description
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Execute query with pagination
+    const propertyTypes = await PropertyType.find(query)
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    // Get total count for pagination
+    const total = await PropertyType.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: propertyTypes,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get property types error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching property types'
+    });
+  }
+};
+
+// @desc    Get single property type
+// @route   GET /api/property-types/:id
+// @access  Public for active, Private/Admin for all
+const getPropertyType = async (req, res) => {
+  try {
+    const propertyType = await PropertyType.findById(req.params.id);
+
+    if (!propertyType) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property type not found'
+      });
+    }
+
+    // If not admin and property type is inactive, return error
+    if (req.user && req.user.userType !== 'admin' && !propertyType.isActive) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property type not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: propertyType
+    });
+
+  } catch (error) {
+    console.error('Get property type error:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid property type ID format'
+      });
+    }
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching property type'
+    });
+  }
+};
 // @desc    Create property type with image upload
 // @route   POST /api/property-types
 // @access  Private/Admin
@@ -228,8 +332,45 @@ const deletePropertyType = async (req, res) => {
   }
 };
 
+
 // Keep other controller methods (getPropertyTypes, getPropertyType, deactivatePropertyType) the same
 // ... (your existing code)
+
+
+// @desc    Deactivate property type
+// @route   PUT /api/property-types/:id/deactivate
+// @access  Private/Admin
+const deactivatePropertyType = async (req, res) => {
+  try {
+    const propertyType = await PropertyType.findById(req.params.id);
+
+    if (!propertyType) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property type not found'
+      });
+    }
+
+    propertyType.isActive = false;
+    propertyType.updatedBy = req.user.uid;
+    propertyType.updatedAt = Date.now();
+    await propertyType.save();
+
+    res.status(200).json({
+      success: true,
+      data: propertyType,
+      message: 'Property type deactivated successfully'
+    });
+
+  } catch (error) {
+    console.error('Deactivate property type error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while deactivating property type'
+    });
+  }
+};
+
 
 module.exports = {
   getPropertyTypes,
