@@ -8,7 +8,7 @@ const {
   deactivatePropertyType
 } = require('../controllers/propertyTypeController');
 const { verifyFirebaseToken, requireUserInDB } = require('../middleware/firebaseAuth');
-const { authorize } = require('../middleware/auth');
+// const { authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -16,8 +16,8 @@ const router = express.Router();
 router.get('/active', getPropertyTypes);
 
 // Firebase protected routes
-router.use(verifyFirebaseToken);
-router.use(requireUserInDB);
+// router.use(verifyFirebaseToken);
+// router.use(requireUserInDB);
 
 // // Admin only routes
 // router.use(authorize('admin')); 
