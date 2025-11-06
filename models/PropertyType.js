@@ -4,7 +4,7 @@ const propertyTypeSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Property type name is required'],
-    trim: true,
+    trim: true, 
     maxlength: [50, 'Property type name cannot exceed 50 characters'],
     unique: true
   },
