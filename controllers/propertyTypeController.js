@@ -64,11 +64,11 @@ const createPropertyType = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      error: 'Server error while creating property type'
+      error: `Server error while creating property type ${error}`
     });
   }
 };
-
+  
 // @desc    Update property type with image upload
 // @route   PUT /api/property-types/:id
 // @access  Private/Admin
