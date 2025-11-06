@@ -116,7 +116,7 @@ const createPropertyType = async (req, res) => {
       iconImageUrl,
       iconImageThumbUrl
     } = req.body;
-console.log('Create property type request body:', req.body);
+console.log('Create property type request body: ', req.body);
     // Check if property type with same name already exists
     const existingPropertyType = await PropertyType.findOne({ name });
     if (existingPropertyType) {
