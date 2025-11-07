@@ -146,13 +146,13 @@ const createPropertyType = async (req, res) => {
     // Get image URLs from uploaded files
     const iconImageUrl = req.file ? req.file.path : "";
 
-    // const iconImageThumbUrl = req.file ?
-    //   req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
+    const iconImageThumbUrl = req.file ?
+      req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
 
-    // Generate thumbnail URL from main image
-    const iconImageThumbUrl = iconImageUrl
-      ? generateThumbnailUrl(iconImageUrl)
-      : "";
+    // // Generate thumbnail URL from main image
+    // const iconImageThumbUrl = iconImageUrl
+    //   ? generateThumbnailUrl(iconImageUrl)
+    //   : "";
 
     // Create property type
     const propertyType = await PropertyType.create({
@@ -256,8 +256,8 @@ const updatePropertyType = async (req, res) => {
 
       // Set new image URLs
       req.body.iconImageUrl = req.file.path;
-      // req.body.iconImageThumbUrl = req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '');
-      req.body.iconImageThumbUrl = generateThumbnailUrl(req.file.path);
+      req.body.iconImageThumbUrl = req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '');
+      // req.body.iconImageThumbUrl = generateThumbnailUrl(req.file.path);
     } else {
       if (imageChanged = req.body.imageChanged === "true") {
         if (propertyType.iconImageUrl) {
