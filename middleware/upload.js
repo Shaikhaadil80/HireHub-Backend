@@ -34,7 +34,7 @@ const uploadThumbnail = multer({
 
 // Middleware to handle single image upload
 const uploadSingleImage = upload.single('iconImage');
-const uploadThumbnailImage = uploadThumbnail.single('iconImage');
+// const uploadThumbnailImage = uploadThumbnail.single('iconImage');
 
 // Middleware to handle errors
 const handleUploadErrors = (err, req, res, next) => {

@@ -26,24 +26,24 @@ const storage = new CloudinaryStorage({
 });
 
 // For thumbnail generation
-const thumbnailStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'hirehub/property-types/thumbnails',
-    format: async (req, file) => 'png',
-    public_id: (req, file) => {
-      const timestamp = Date.now();
-      const originalName = file.originalname.split('.')[0];
-      return `property-type-thumb-${originalName}-${timestamp}`;
-    },
-    transformation: [
-      { width: 200, height: 200, crop: 'thumb', quality: 'auto'  }, // Thumbnail
-    ],
-  },
-});
+// const thumbnailStorage = new CloudinaryStorage({
+//   cloudinary: cloudinary,
+//   params: {
+//     folder: 'hirehub/property-types/thumbnails',
+//     format: async (req, file) => 'png',
+//     public_id: (req, file) => {
+//       const timestamp = Date.now();
+//       const originalName = file.originalname.split('.')[0];
+//       return `property-type-thumb-${originalName}-${timestamp}`;
+//     },
+//     transformation: [
+//       { width: 200, height: 200, crop: 'thumb', quality: 'auto'  }, // Thumbnail
+//     ],
+//   },
+// });
 
 module.exports = {
   cloudinary,
   storage,
-  thumbnailStorage
+  // thumbnailStorage
 }; 
