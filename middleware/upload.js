@@ -62,6 +62,6 @@ const handleUploadErrors = (err, req, res, next) => {
 
 module.exports = {
   uploadSingleImage,
-  uploadThumbnailImage,
+  // uploadThumbnailImage,
   handleUploadErrors
 };
