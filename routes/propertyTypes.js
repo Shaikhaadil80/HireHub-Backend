@@ -10,7 +10,7 @@ const {
 } = require('../controllers/propertyTypeController');
 const { verifyFirebaseToken, requireUserInDB } = require('../middleware/firebaseAuth');
 const { authorize } = require('../middleware/auth');
-const { uploadBothImages, handleUploadErrors } = require('../middleware/upload');
+const { uploadSingleImage,uploadBothImages, handleUploadErrors } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -25,7 +25,7 @@ router.use(requireUserInDB);
 // router.use(authorize('admin'));
 
 // Image upload route (separate from create/update)
-router.post('/upload-image', uploadBothImages, handleUploadErrors, uploadPropertyTypeImage);
+router.post('/upload-image', uploadSingleImage, handleUploadErrors, uploadPropertyTypeImage);
 
 // Property type CRUD routes with image upload
 router.get('/', getPropertyTypes);
