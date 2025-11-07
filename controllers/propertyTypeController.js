@@ -144,9 +144,15 @@ const createPropertyType = async (req, res) => {
     }
 
     // Get image URLs from uploaded files
-    // Get image URLs from both uploaded files (main and thumbnail)
-    const iconImageUrl = req.files && req.files[0] ? req.files[0].path : "";
-    const iconImageThumbUrl = req.files && req.files[1] ? req.files[1].path : "";
+    const iconImageUrl = req.file ? req.file.path : "";
+
+    const iconImageThumbUrl = req.file ?
+      req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
+
+    // // Generate thumbnail URL from main image
+    // const iconImageThumbUrl = iconImageUrl
+    //   ? generateThumbnailUrl(iconImageUrl)
+    //   : "";
 
     // Create property type
     const propertyType = await PropertyType.create({
@@ -382,21 +388,23 @@ const deletePropertyType = async (req, res) => {
 // Add this new function to handle image upload separately
 const uploadPropertyTypeImage = async (req, res) => {
   try {
-    if (!req.files || req.files.length === 0) {
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        error: "No image files provided",
+        error: "No image file provided",
       });
     }
 
     res.status(200).json({
       success: true,
       data: {
-        imageUrl: req.files[0].path,
-        thumbnailUrl: req.files[1].path,
-        publicId: req.files[0].filename,
+        imageUrl: req.file.path,
+        thumbnailUrl: req.file.path
+          .replace("/property-types/", "/property-types/thumbnails/")
+          .replace(/\.[^/.]+$/, ""),
+        publicId: req.file.filename,
       },
-      message: "Images uploaded successfully",
+      message: "Image uploaded successfully",
     });
   } catch (error) {
     console.error("Image upload error:", error);
