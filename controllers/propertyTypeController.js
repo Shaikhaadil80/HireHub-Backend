@@ -418,6 +418,7 @@ module.exports = {
   createPropertyType,
   updatePropertyType,
   deletePropertyType,
+  uploadPropertyTypeImage,
   deactivatePropertyType
 };
 
