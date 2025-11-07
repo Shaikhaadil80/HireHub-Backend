@@ -270,7 +270,7 @@ const updatePropertyType = async (req, res) => {
           );
         }
           if (propertyType.iconImageThumbUrl) {
-          const publicId = propertyType.iconImageThumbUrl
+          const thumbPublicId = propertyType.iconImageThumbUrl
             .split("/")
             .pop()
             .split(".")[0];
