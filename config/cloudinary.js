@@ -20,7 +20,7 @@ const storage = new CloudinaryStorage({
       return `property-type-${originalName}-${timestamp}`;
     },
     transformation: [
-      { width: 800, height: 800, crop: 'limit' }, // Main image
+      { width: 800, height: 800, crop: 'limit', quality: 'auto' }, // Main image
     ],
   },
 });
@@ -37,7 +37,7 @@ const thumbnailStorage = new CloudinaryStorage({
       return `property-type-thumb-${originalName}-${timestamp}`;
     },
     transformation: [
-      { width: 200, height: 200, crop: 'thumb' }, // Thumbnail
+      { width: 200, height: 200, crop: 'thumb', quality: 'auto'  }, // Thumbnail
     ],
   },
 });

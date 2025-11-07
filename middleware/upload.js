@@ -5,7 +5,7 @@ const { storage, thumbnailStorage } = require('../config/cloudinary');
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 2 * 1024 * 1024, // 2MB limit
   },
   fileFilter: (req, file, cb) => {
     // Check if file is an image
@@ -21,7 +21,7 @@ const upload = multer({
 const uploadThumbnail = multer({
   storage: thumbnailStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 2 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {

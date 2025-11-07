@@ -1,38 +1,56 @@
-const PropertyType = require('../models/PropertyType');
-const { cloudinary } = require('../config/cloudinary');
+const PropertyType = require("../models/PropertyType");
+const { cloudinary } = require("../config/cloudinary");
 
+// Helper function to generate thumbnail URL from main image URL
+const generateThumbnailUrl = (imageUrl) => {
+  if (!imageUrl) return "";
+
+  // Extract public ID from Cloudinary URL
+  const urlParts = imageUrl.split("/");
+  const publicIdWithExtension = urlParts[urlParts.length - 1];
+  const publicId = publicIdWithExtension.split(".")[0];
+
+  // Generate thumbnail URL with Cloudinary transformations
+  const thumbnailUrl = cloudinary.url(publicId, {
+    transformation: [
+      {
+        width: 200,
+        height: 200,
+        crop: "fill",
+        quality: "auto",
+        format: "webp",
+      },
+    ],
+  });
+
+  return thumbnailUrl;
+};
 
 // @desc    Get all property types (with filtering, sorting, pagination)
 // @route   GET /api/property-types
 // @access  Public for active, Private/Admin for all
 const getPropertyTypes = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      sort = 'name',
-      isActive,
-      search
-    } = req.query;
+    const { page = 1, limit = 10, sort = "name", isActive, search } = req.query;
 
     // Build query
     let query = {};
 
     // If not admin, only show active property types
-    if (req.user && req.user.userType !== 'admin') {
+    if (req.user && req.user.userType !== "admin") {
       query.isActive = true;
     }
 
     // Filter by active status if provided (admin only)
-    if (isActive !== undefined && req.user && req.user.userType === 'admin') {
-      query.isActive = isActive === 'true';
+    if (isActive !== undefined && req.user && req.user.userType === "admin") {
+      query.isActive = isActive === "true";
     }
 
     // Search in name and description
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -52,15 +70,14 @@ const getPropertyTypes = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
-
   } catch (error) {
-    console.error('Get property types error:', error);
+    console.error("Get property types error:", error);
     res.status(500).json({
       success: false,
-      error: 'Server error while fetching property types'
+      error: "Server error while fetching property types",
     });
   }
 };
@@ -75,34 +92,33 @@ const getPropertyType = async (req, res) => {
     if (!propertyType) {
       return res.status(404).json({
         success: false,
-        error: 'Property type not found'
+        error: "Property type not found",
       });
     }
 
     // If not admin and property type is inactive, return error
-    if (req.user && req.user.userType !== 'admin' && !propertyType.isActive) {
+    if (req.user && req.user.userType !== "admin" && !propertyType.isActive) {
       return res.status(404).json({
         success: false,
-        error: 'Property type not found'
+        error: "Property type not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: propertyType
+      data: propertyType,
     });
-
   } catch (error) {
-    console.error('Get property type error:', error);
-    if (error.name === 'CastError') {
+    console.error("Get property type error:", error);
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid property type ID format'
+        error: "Invalid property type ID format",
       });
     }
     res.status(500).json({
       success: false,
-      error: 'Server error while fetching property type'
+      error: "Server error while fetching property type",
     });
   }
 };
@@ -112,10 +128,7 @@ const getPropertyType = async (req, res) => {
 // @access  Private/Admin
 const createPropertyType = async (req, res) => {
   try {
-    const {
-      name,
-      description
-    } = req.body;
+    const { name, description } = req.body;
 
     // Check if property type with same name already exists
     const existingPropertyType = await PropertyType.findOne({ name });
@@ -126,14 +139,20 @@ const createPropertyType = async (req, res) => {
       }
       return res.status(400).json({
         success: false,
-        error: 'Property type with this name already exists'
+        error: "Property type with this name already exists",
       });
     }
 
     // Get image URLs from uploaded files
-    const iconImageUrl = req.file ? req.file.path : '';
-    const iconImageThumbUrl = req.file ? 
+    const iconImageUrl = req.file ? req.file.path : "";
+
+    const iconImageThumbUrl = req.file ?
       req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
+
+    // // Generate thumbnail URL from main image
+    // const iconImageThumbUrl = iconImageUrl
+    //   ? generateThumbnailUrl(iconImageUrl)
+    //   : "";
 
     // Create property type
     const propertyType = await PropertyType.create({
@@ -142,39 +161,38 @@ const createPropertyType = async (req, res) => {
       iconImageUrl,
       iconImageThumbUrl,
       createdBy: req.user.uid,
-      updatedBy: req.user.uid
+      updatedBy: req.user.uid,
     });
 
     res.status(201).json({
       success: true,
       data: propertyType,
-      message: 'Property type created successfully'
+      message: "Property type created successfully",
     });
-
   } catch (error) {
-    console.error('Create property type error:', error);
-    
+    console.error("Create property type error:", error);
+
     // Delete uploaded images if error occurs
     if (req.file) {
       try {
         await cloudinary.uploader.destroy(req.file.filename);
       } catch (deleteError) {
-        console.error('Error deleting uploaded image:', deleteError);
+        console.error("Error deleting uploaded image:", deleteError);
       }
     }
-    
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
-        details: errors
+        error: "Validation failed",
+        details: errors,
       });
     }
 
     res.status(500).json({
       success: false,
-      error: 'Server error while creating property type'
+      error: "Server error while creating property type",
     });
   }
 };
@@ -193,7 +211,7 @@ const updatePropertyType = async (req, res) => {
       }
       return res.status(404).json({
         success: false,
-        error: 'Property type not found'
+        error: "Property type not found",
       });
     }
 
@@ -201,7 +219,7 @@ const updatePropertyType = async (req, res) => {
     if (req.body.name) {
       const duplicatePropertyType = await PropertyType.findOne({
         name: req.body.name,
-        _id: { $ne: propertyType._id }
+        _id: { $ne: propertyType._id },
       });
 
       if (duplicatePropertyType) {
@@ -211,7 +229,7 @@ const updatePropertyType = async (req, res) => {
         }
         return res.status(400).json({
           success: false,
-          error: 'Property type with this name already exists'
+          error: "Property type with this name already exists",
         });
       }
     }
@@ -220,19 +238,48 @@ const updatePropertyType = async (req, res) => {
     if (req.file) {
       // Delete old images from Cloudinary
       if (propertyType.iconImageUrl) {
-        const publicId = propertyType.iconImageUrl.split('/').pop().split('.')[0];
+        const publicId = propertyType.iconImageUrl
+          .split("/")
+          .pop()
+          .split(".")[0];
         await cloudinary.uploader.destroy(`hirehub/property-types/${publicId}`);
       }
       if (propertyType.iconImageThumbUrl) {
-        const thumbPublicId = propertyType.iconImageThumbUrl.split('/').pop().split('.')[0];
-        await cloudinary.uploader.destroy(`hirehub/property-types/thumbnails/${thumbPublicId}`);
+        const thumbPublicId = propertyType.iconImageThumbUrl
+          .split("/")
+          .pop()
+          .split(".")[0];
+        await cloudinary.uploader.destroy(
+          `hirehub/property-types/thumbnails/${thumbPublicId}`
+        );
       }
 
       // Set new image URLs
       req.body.iconImageUrl = req.file.path;
       req.body.iconImageThumbUrl = req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '');
+      // req.body.iconImageThumbUrl = generateThumbnailUrl(req.file.path);
+    } else {
+      if (imageChanged = req.body.imageChanged === "true") {
+        if (propertyType.iconImageUrl) {
+          const publicId = propertyType.iconImageUrl
+            .split("/")
+            .pop()
+            .split(".")[0];
+          await cloudinary.uploader.destroy(
+            `hirehub/property-types/${publicId}`
+          );
+        }
+          if (propertyType.iconImageThumbUrl) {
+          const publicId = propertyType.iconImageThumbUrl
+            .split("/")
+            .pop()
+            .split(".")[0];
+          await cloudinary.uploader.destroy(
+          `hirehub/property-types/thumbnails/${thumbPublicId}`
+        );
+        }
+      }
     }
-
     // Set updatedBy and updatedAt
     req.body.updatedBy = req.user.uid;
     req.body.updatedAt = Date.now();
@@ -243,47 +290,46 @@ const updatePropertyType = async (req, res) => {
       req.body,
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
     );
 
     res.status(200).json({
       success: true,
       data: propertyType,
-      message: 'Property type updated successfully'
+      message: "Property type updated successfully",
     });
-
   } catch (error) {
-    console.error('Update property type error:', error);
-    
+    console.error("Update property type error:", error);
+
     // Delete uploaded image if error occurs
     if (req.file) {
       try {
         await cloudinary.uploader.destroy(req.file.filename);
       } catch (deleteError) {
-        console.error('Error deleting uploaded image:', deleteError);
+        console.error("Error deleting uploaded image:", deleteError);
       }
     }
-    
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
-        details: errors
+        error: "Validation failed",
+        details: errors,
       });
     }
 
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid property type ID format'
+        error: "Invalid property type ID format",
       });
     }
 
     res.status(500).json({
       success: false,
-      error: 'Server error while updating property type'
+      error: "Server error while updating property type",
     });
   }
 };
@@ -298,18 +344,23 @@ const deletePropertyType = async (req, res) => {
     if (!propertyType) {
       return res.status(404).json({
         success: false,
-        error: 'Property type not found'
+        error: "Property type not found",
       });
     }
 
     // Delete images from Cloudinary
     if (propertyType.iconImageUrl) {
-      const publicId = propertyType.iconImageUrl.split('/').pop().split('.')[0];
+      const publicId = propertyType.iconImageUrl.split("/").pop().split(".")[0];
       await cloudinary.uploader.destroy(`hirehub/property-types/${publicId}`);
     }
     if (propertyType.iconImageThumbUrl) {
-      const thumbPublicId = propertyType.iconImageThumbUrl.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`hirehub/property-types/thumbnails/${thumbPublicId}`);
+      const thumbPublicId = propertyType.iconImageThumbUrl
+        .split("/")
+        .pop()
+        .split(".")[0];
+      await cloudinary.uploader.destroy(
+        `hirehub/property-types/thumbnails/${thumbPublicId}`
+      );
     }
 
     await PropertyType.findByIdAndDelete(req.params.id);
@@ -317,20 +368,19 @@ const deletePropertyType = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {},
-      message: 'Property type deleted successfully'
+      message: "Property type deleted successfully",
     });
-
   } catch (error) {
-    console.error('Delete property type error:', error);
-    if (error.name === 'CastError') {
+    console.error("Delete property type error:", error);
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        error: 'Invalid property type ID format'
+        error: "Invalid property type ID format",
       });
     }
     res.status(500).json({
       success: false,
-      error: 'Server error while deleting property type'
+      error: "Server error while deleting property type",
     });
   }
 };
@@ -341,7 +391,7 @@ const uploadPropertyTypeImage = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        error: 'No image file provided'
+        error: "No image file provided",
       });
     }
 
@@ -349,33 +399,33 @@ const uploadPropertyTypeImage = async (req, res) => {
       success: true,
       data: {
         imageUrl: req.file.path,
-        thumbnailUrl: req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, ''),
-        publicId: req.file.filename
+        thumbnailUrl: req.file.path
+          .replace("/property-types/", "/property-types/thumbnails/")
+          .replace(/\.[^/.]+$/, ""),
+        publicId: req.file.filename,
       },
-      message: 'Image uploaded successfully'
+      message: "Image uploaded successfully",
     });
-
   } catch (error) {
-    console.error('Image upload error:', error);
-    
+    console.error("Image upload error:", error);
+
     // Delete uploaded image if error occurs
     if (req.file) {
       try {
         await cloudinary.uploader.destroy(req.file.filename);
       } catch (deleteError) {
-        console.error('Error deleting uploaded image:', deleteError);
+        console.error("Error deleting uploaded image:", deleteError);
       }
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Server error while uploading image'
+      error: "Server error while uploading image",
     });
   }
 };
 // Keep other controller methods (getPropertyTypes, getPropertyType, deactivatePropertyType) the same
 // ... (your existing code)
-
 
 // @desc    Deactivate property type
 // @route   PUT /api/property-types/:id/deactivate
@@ -387,7 +437,7 @@ const deactivatePropertyType = async (req, res) => {
     if (!propertyType) {
       return res.status(404).json({
         success: false,
-        error: 'Property type not found'
+        error: "Property type not found",
       });
     }
 
@@ -399,18 +449,16 @@ const deactivatePropertyType = async (req, res) => {
     res.status(200).json({
       success: true,
       data: propertyType,
-      message: 'Property type deactivated successfully'
+      message: "Property type deactivated successfully",
     });
-
   } catch (error) {
-    console.error('Deactivate property type error:', error);
+    console.error("Deactivate property type error:", error);
     res.status(500).json({
       success: false,
-      error: 'Server error while deactivating property type'
+      error: "Server error while deactivating property type",
     });
   }
 };
-
 
 module.exports = {
   getPropertyTypes,
@@ -419,9 +467,5 @@ module.exports = {
   updatePropertyType,
   deletePropertyType,
   uploadPropertyTypeImage,
-  deactivatePropertyType
+  deactivatePropertyType,
 };
-
-
-
-
