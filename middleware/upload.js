@@ -32,9 +32,15 @@ const uploadThumbnail = multer({
   },
 });
 
-// Middleware to handle single image upload
+// Middleware to handle image uploads
 const uploadSingleImage = upload.single('iconImage');
-// const uploadThumbnailImage = uploadThumbnail.single('iconImage');
+const uploadThumbnailImage = uploadThumbnail.single('iconImage');
+
+// Combined middleware for handling both uploads
+const uploadBothImages = [
+  upload.single('iconImage'),
+  uploadThumbnail.single('iconImage')
+];
 
 // Middleware to handle errors
 const handleUploadErrors = (err, req, res, next) => {
@@ -62,6 +68,7 @@ const handleUploadErrors = (err, req, res, next) => {
 
 module.exports = {
   uploadSingleImage,
-  // uploadThumbnailImage,
+  uploadThumbnailImage,
+  uploadBothImages,
   handleUploadErrors
 };
