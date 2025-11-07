@@ -46,4 +46,4 @@ module.exports = {
   cloudinary,
   storage,
   thumbnailStorage
-};
+}; 
