@@ -42,20 +42,22 @@ const uploadPropertyFiles = (req, res, next) => {
       return next(err);
     }
     console.log("Thumbnail uploaded");
-    // console.log("Now uploading main images");
     // Then upload multiple main images
-    // uploadPropertyImages.array('mainImages', 10)(req, res, (err) => {
-    //   if (err) {
-    //     // Clean up uploaded thumbnail if there's an error with main images
-    //     if (req.file) {
-    //       // You might want to delete the uploaded thumbnail here
-    //     }
-    //     console.error("Error uploading main images:", err);
-    //     return next(err);
-    //   }
-    //   next();
-    // });
+   
   });
+  
+    console.log("Now uploading main images");
+   uploadPropertyImages.array('mainImages', 5)(req, res, (err) => {
+      if (err) {
+        // Clean up uploaded thumbnail if there's an error with main images
+        if (req.file) {
+          // You might want to delete the uploaded thumbnail here
+        }
+        console.error("Error uploading main images:", err);
+        return next(err);
+      }
+      next();
+    });
   console.log("Upload process initiated");
 };
 
