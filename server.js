@@ -51,6 +51,9 @@ app.use('/api/auth', auth);
 app.use('/api/users', users);
 app.use('/api/public', require('./routes/public'));
 app.use('/api/property-types', require('./routes/propertyTypes'));
+
+const propertyRoutes = require('./routes/propertyRoutes');
+app.use('/api/properties', propertyRoutes);
 // Health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({
