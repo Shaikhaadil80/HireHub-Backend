@@ -38,6 +38,7 @@ const uploadPropertyFiles = (req, res, next) => {
   console.log("Uploading thumbnail and images");
   uploadPropertyThumbnail.single('thumbnailImage')(req, res, (err) => {
     if (err) {
+      console.error("Error uploading thumbnail:", err);
       return next(err);
     }
     console.log("Thumbnail uploaded");
@@ -49,6 +50,7 @@ const uploadPropertyFiles = (req, res, next) => {
         if (req.file) {
           // You might want to delete the uploaded thumbnail here
         }
+        console.error("Error uploading main images:", err);
         return next(err);
       }
       next();
