@@ -6,7 +6,7 @@ const { propertyStorage, propertyThumbnailStorage } = require('../config/cloudin
 const uploadPropertyImages = multer({
   storage: propertyStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit per file
+    fileSize: 2 * 1024 * 1024, // 2MB limit per file
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -21,7 +21,7 @@ const uploadPropertyImages = multer({
 const uploadPropertyThumbnail = multer({
   storage: propertyThumbnailStorage,
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: 1 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -42,19 +42,19 @@ const uploadPropertyFiles = (req, res, next) => {
       return next(err);
     }
     console.log("Thumbnail uploaded");
-    console.log("Now uploading main images");
+    // console.log("Now uploading main images");
     // Then upload multiple main images
-    uploadPropertyImages.array('mainImages', 10)(req, res, (err) => {
-      if (err) {
-        // Clean up uploaded thumbnail if there's an error with main images
-        if (req.file) {
-          // You might want to delete the uploaded thumbnail here
-        }
-        console.error("Error uploading main images:", err);
-        return next(err);
-      }
-      next();
-    });
+    // uploadPropertyImages.array('mainImages', 10)(req, res, (err) => {
+    //   if (err) {
+    //     // Clean up uploaded thumbnail if there's an error with main images
+    //     if (req.file) {
+    //       // You might want to delete the uploaded thumbnail here
+    //     }
+    //     console.error("Error uploading main images:", err);
+    //     return next(err);
+    //   }
+    //   next();
+    // });
   });
   console.log("Upload process initiated");
 };
