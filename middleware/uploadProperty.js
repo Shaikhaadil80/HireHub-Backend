@@ -35,11 +35,13 @@ const uploadPropertyThumbnail = multer({
 // Middleware to handle multiple images and single thumbnail
 const uploadPropertyFiles = (req, res, next) => {
   // First upload thumbnail
+  console.log("Uploading thumbnail and images");
   uploadPropertyThumbnail.single('thumbnailImage')(req, res, (err) => {
     if (err) {
       return next(err);
     }
-    
+    console.log("Thumbnail uploaded");
+    console.log("Now uploading main images");
     // Then upload multiple main images
     uploadPropertyImages.array('mainImages', 10)(req, res, (err) => {
       if (err) {
@@ -52,6 +54,7 @@ const uploadPropertyFiles = (req, res, next) => {
       next();
     });
   });
+  console.log("Upload process initiated");
 };
 
 // Middleware to handle errors
