@@ -131,7 +131,7 @@ const getProperty = async (req, res) => {
 const createProperty = async (req, res) => {
   try {
     const { name, description, unit, price, discountAmount, minAdvanceBookingAmount } = req.body;
-console.log("Create property request body:", req.body);
+
     // Check if property with same name already exists
     const existingProperty = await Property.findOne({ name });
     if (existingProperty) {

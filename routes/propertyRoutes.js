@@ -31,7 +31,7 @@ router.post('/upload-images', uploadPropertyFiles, handlePropertyUploadErrors, u
 // Property CRUD routes with image upload
 router.get('/', getProperties);
 router.get('/:id', getProperty);
-router.post('/', uploadPropertyFiles, handlePropertyUploadErrors, createProperty);
+router.post('/', createProperty);
 router.put('/:id', uploadPropertyFiles, handlePropertyUploadErrors, updateProperty);
 router.delete('/:id', deleteProperty);
 router.put('/:id/deactivate', deactivateProperty);
