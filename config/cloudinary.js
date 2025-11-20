@@ -16,7 +16,10 @@ const storage = new CloudinaryStorage({
     format: async (req, file) => 'png', // supports promises as well
     public_id: (req, file) => {
       const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(7);
+
       const originalName = file.originalname.split('.')[0];
+      return `${file.fieldname}-${originalName}-${timestamp}-${randomString}`;
       return `property-type-${originalName}-${timestamp}`;
     },
     transformation: [
@@ -34,6 +37,7 @@ const thumbnailStorage = new CloudinaryStorage({
     public_id: (req, file) => {
       const timestamp = Date.now();
       const originalName = file.originalname.split('.')[0];
+      return `${file.fieldname}-${originalName}-${timestamp}-${randomString}`;
       return `property-type-thumb-${originalName}-${timestamp}`;
     },
     transformation: [

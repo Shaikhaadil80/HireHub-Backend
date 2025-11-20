@@ -18,13 +18,13 @@ router.get('/check-email/:email', checkUserExists);
 router.use(verifyFirebaseToken);
 
 
-// Profile check route (used by frontend)
-router.get('/check-profile/:uid', checkUserProfileExists);
 
 // User profile management
 router.post('/', createUser);
 router.get('/me', requireUserInDB, getCurrentUser);
 router.put('/me', requireUserInDB, updateUser);
+// Profile check route (used by frontend)
+router.get('/check-profile/:uid', checkUserProfileExists);
 router.get('/:id', requireUserInDB, getUserById);
 
 module.exports = router;

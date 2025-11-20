@@ -5,31 +5,108 @@ const { cloudinary } = require("../config/cloudinary");
 const generateThumbnailUrl = (imageUrl) => {
   if (!imageUrl) return "";
 
-  // Extract public ID from Cloudinary URL
-  const urlParts = imageUrl.split("/");
-  const publicIdWithExtension = urlParts[urlParts.length - 1];
-  const publicId = publicIdWithExtension.split(".")[0];
-
-  // Generate thumbnail URL with Cloudinary transformations
-  const thumbnailUrl = cloudinary.url(publicId, {
-    transformation: [
-      {
-        width: 200,
-        height: 200,
-        crop: "fill",
-        quality: "auto",
-        format: "webp",
-      },
-    ],
-  });
-
-  return thumbnailUrl;
+  try {
+    // Extract public ID from Cloudinary URL
+    const urlParts = imageUrl.split("hirehub");
+    const publicIdWithExtension = `hirehub${urlParts[urlParts.length - 1]}`;
+    const publicId = publicIdWithExtension.split(".")[0];
+console.log('publicId', publicId);
+    // Generate thumbnail URL with Cloudinary transformations
+    const thumbnailUrl = cloudinary.url(publicId, {
+      transformation: [
+        {
+          width: 200,
+          height: 200,
+          crop: "fill",
+          gravity: "auto",
+          quality: "auto",
+          format: "webp",
+        },
+      ],
+    });
+const urlSplit = thumbnailUrl.split('http');
+    const newThumbnailUrl = `https${urlSplit[1]}.webp`;
+    
+console.log('thumbnailUrl', thumbnailUrl);
+console.log('newThumbnailUrl', newThumbnailUrl);
+    return newThumbnailUrl;
+  } catch (error) {
+    console.error("Error generating thumbnail URL:", error);
+    return ""; // Return empty string if generation fails
+  }
 };
 
+// Alternative function that accepts Cloudinary upload result directly
+const generateThumbnailFromUpload = (uploadResult) => {
+  if (!uploadResult || !uploadResult.path) return "";
+
+  try {
+    // Use the public_id from upload result for more reliable thumbnail generation
+    const publicId = uploadResult.filename; // This is the public_id without extension
+    
+    const thumbnailUrl = cloudinary.url(publicId, {
+      transformation: [
+        {
+          width: 200,
+          height: 200,
+          crop: "fill",
+          gravity: "auto",
+          quality: "auto",
+          format: "webp",
+        },
+      ],
+    });
+
+    return thumbnailUrl;
+  } catch (error) {
+    console.error("Error generating thumbnail from upload:", error);
+    return "";
+  }
+};
+
+// Function to generate multiple thumbnail sizes
+const generateMultipleThumbnails = (imageUrl, sizes = [200, 400, 600]) => {
+  if (!imageUrl) return {};
+
+  try {
+    const urlParts = imageUrl.split("/");
+    const publicIdWithExtension = urlParts[urlParts.length - 1];
+    const publicId = publicIdWithExtension.split(".")[0];
+
+    const thumbnails = {};
+    
+    sizes.forEach(size => {
+      thumbnails[`thumb${size}`] = cloudinary.url(publicId, {
+        transformation: [
+          {
+            width: size,
+            height: size,
+            crop: "fill",
+            gravity: "auto",
+            quality: "auto",
+            format: "webp",
+          },
+        ],
+      });
+    });
+
+    return thumbnails;
+  } catch (error) {
+    console.error("Error generating multiple thumbnails:", error);
+    return {};
+  }
+};
+
+// helper function end 
+
+
+
+
+
 // @desc    Get all property types (with filtering, sorting, pagination)
-// @route   GET /api/property-types
+// @route   GET /api/property-types/customer-types
 // @access  Public for active, Private/Admin for all
-const getPropertyTypes = async (req, res) => {
+const getCustomerPropertyTypes = async (req, res) => {
   try {
     const { page = 1, limit = 10, sort = "name", isActive, search } = req.query;
 
@@ -82,6 +159,64 @@ const getPropertyTypes = async (req, res) => {
   }
 };
 
+// @desc    Get all property types (with filtering, sorting, pagination)
+// @route   GET /api/property-types
+// @access  Public for active, Private/Admin for all
+const getPropertyTypes = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, sort = "name", isActive, search } = req.query;
+
+    // Build query
+    let query = {};
+
+    // If not admin, only show active property types
+    if (req.user && req.user.userType !== "admin") {
+      query.isActive = true;
+      query.createdBy = req.user.uid;
+    }
+
+    // Filter by active status if provided (admin only)
+    if (isActive !== undefined && req.user && req.user.userType === "admin") {
+      query.isActive = isActive === "true";
+      query.createdBy = req.user.uid;
+
+    }
+
+    // Search in name and description
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Execute query with pagination
+    const propertyTypes = await PropertyType.find(query)
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    // Get total count for pagination
+    const total = await PropertyType.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: propertyTypes,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Get property types error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Server error while fetching property types",
+    });
+  }
+};
 // @desc    Get single property type
 // @route   GET /api/property-types/:id
 // @access  Public for active, Private/Admin for all
@@ -129,7 +264,6 @@ const getPropertyType = async (req, res) => {
 const createPropertyType = async (req, res) => {
   try {
     const { name, description } = req.body;
-
     // Check if property type with same name already exists
     const existingPropertyType = await PropertyType.findOne({ name });
     if (existingPropertyType) {
@@ -145,9 +279,10 @@ const createPropertyType = async (req, res) => {
 
     // Get image URLs from uploaded files
     const iconImageUrl = req.file ? req.file.path : "";
-
-    const iconImageThumbUrl = req.file ?
-      req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
+// Replace the current thumbnail generation with:
+const iconImageThumbUrl = iconImageUrl ? generateThumbnailUrl(iconImageUrl) : "";
+    // const iconImageThumbUrl = req.file ?
+    //   req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '') : '';
 
     // // Generate thumbnail URL from main image
     // const iconImageThumbUrl = iconImageUrl
@@ -256,7 +391,10 @@ const updatePropertyType = async (req, res) => {
 
       // Set new image URLs
       req.body.iconImageUrl = req.file.path;
-      req.body.iconImageThumbUrl = req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '');
+      console.log("req.file.path", req.body.iconImageUrl, req.file.path);
+      // Replace the current thumbnail generation with:
+req.body.iconImageThumbUrl = req.file ? generateThumbnailUrl(req.file.path) : "";
+      // req.body.iconImageThumbUrl = req.file.path.replace('/property-types/', '/property-types/thumbnails/').replace(/\.[^/.]+$/, '');
       // req.body.iconImageThumbUrl = generateThumbnailUrl(req.file.path);
     } else {
       if (imageChanged = req.body.imageChanged === "true") {
@@ -394,12 +532,13 @@ const uploadPropertyTypeImage = async (req, res) => {
         error: "No image file provided",
       });
     }
-
+// You can use it like this:
+const thumbnailUrl = generateThumbnailUrl(req.file.path);
     res.status(200).json({
       success: true,
       data: {
         imageUrl: req.file.path,
-        thumbnailUrl: req.file.path
+        thumbnailUrl: thumbnailUrl ? thumbnailUrl : req.file.path
           .replace("/property-types/", "/property-types/thumbnails/")
           .replace(/\.[^/.]+$/, ""),
         publicId: req.file.filename,
@@ -462,6 +601,7 @@ const deactivatePropertyType = async (req, res) => {
 
 module.exports = {
   getPropertyTypes,
+  getCustomerPropertyTypes,
   getPropertyType,
   createPropertyType,
   updatePropertyType,

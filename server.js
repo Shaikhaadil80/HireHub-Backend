@@ -54,6 +54,10 @@ app.use('/api/property-types', require('./routes/propertyTypes'));
 
 const propertyRoutes = require('./routes/propertyRoutes');
 app.use('/api/properties', propertyRoutes);
+app.use('/api/ratings', require('./routes/ratingRoutes'));
+app.use('/api/favorites', require('./routes/favoriteRoutes'));
+app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 // Health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({

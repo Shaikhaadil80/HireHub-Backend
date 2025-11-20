@@ -32,6 +32,24 @@ const uploadThumbnail = multer({
   },
 });
 
+// const uploadPropertyFilesSingle = multer({
+//   storage: storage,
+//   limits: {
+//     fileSize: 2 * 1024 * 1024,
+//   },
+//   fileFilter: (req, file, cb) => {
+//     if (file.mimetype.startsWith('image/')) {
+//       cb(null, true);
+//     } else {
+//       cb(new Error('Only image files are allowed!'), false);
+//     }
+//   },
+  
+// }).fields([
+//   // { name: 'thumbnailImage', maxCount: 1 },
+//   { name: 'iconImage', maxCount: 5 }
+// ]);
+
 // Middleware to handle single image upload
 const uploadSingleImage = upload.single('iconImage');
 // const uploadThumbnailImage = uploadThumbnail.single('iconImage');
@@ -39,6 +57,8 @@ const uploadSingleImage = upload.single('iconImage');
 // Middleware to handle errors
 const handleUploadErrors = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
+console.log('err', err);
+    // console.log(err);
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
@@ -52,6 +72,7 @@ const handleUploadErrors = (err, req, res, next) => {
       });
     }
   } else if (err) {
+    console.log(err.message);
     return res.status(400).json({
       success: false,
       error: err.message
@@ -62,6 +83,7 @@ const handleUploadErrors = (err, req, res, next) => {
 
 module.exports = {
   uploadSingleImage,
+  // uploadPropertyFilesSingle,
   // uploadThumbnailImage,
   handleUploadErrors
 };
