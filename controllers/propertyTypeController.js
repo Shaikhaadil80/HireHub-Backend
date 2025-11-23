@@ -175,10 +175,12 @@ const getPropertyTypes = async (req, res) => {
       query.createdBy = req.user.uid;
     }
 
+
     // Filter by active status if provided (admin only)
     if (isActive !== undefined && req.user && req.user.userType === "admin") {
       query.isActive = isActive === "true";
       query.createdBy = req.user.uid;
+      
 
     }
 
@@ -193,8 +195,9 @@ const getPropertyTypes = async (req, res) => {
     // Execute query with pagination
     const propertyTypes = await PropertyType.find(query)
       .sort(sort)
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      // .limit(limit * 1)
+      // .skip((page - 1) * limit)
+      ;
 
     // Get total count for pagination
     const total = await PropertyType.countDocuments(query);

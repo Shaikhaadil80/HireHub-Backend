@@ -11,6 +11,7 @@ const connectDB = require('./config/database');
 const auth = require('./routes/auth');
 const users = require('./routes/users');
 
+
 // Connect to database
 connectDB();
 
@@ -58,6 +59,13 @@ app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+
+// test api routes only for testing
+app.use('/api/testdata', require('./routes/testDataStream'));
+// test api routes only for testing
+
+
 // Health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({
