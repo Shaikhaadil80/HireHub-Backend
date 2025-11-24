@@ -100,10 +100,12 @@ const getCurrentUser = async (req, res) => {
         error: 'User profile not found'
       });
     }
-
     res.status(200).json({
       success: true,
-      data: req.user
+      data: req.user,
+      version: "1.0.0",
+      playStore : "", 
+      appStore : "",
     });
 
   } catch (error) {
