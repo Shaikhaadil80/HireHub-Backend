@@ -13,7 +13,6 @@ const generateThumbnailUrl = (imageUrl) => {
     const urlParts = imageUrl.split("hirehub");
     const publicIdWithExtension = `hirehub${urlParts[urlParts.length - 1]}`;
     const publicId = publicIdWithExtension.split(".")[0];
-console.log('publicId', publicId);
     // Generate thumbnail URL with Cloudinary transformations
     const thumbnailUrl = cloudinary.url(publicId, {
       transformation: [
@@ -30,8 +29,6 @@ console.log('publicId', publicId);
 const urlSplit = thumbnailUrl.split('http');
     const newThumbnailUrl = `https${urlSplit[1]}.webp`;
     
-console.log('thumbnailUrl', thumbnailUrl);
-console.log('newThumbnailUrl', newThumbnailUrl);
     return newThumbnailUrl;
   } catch (error) {
     console.error("Error generating thumbnail URL:", error);
@@ -230,6 +227,7 @@ const getProperty = async (req, res) => {
 
 // Helper function to delete images from Cloudinary
 const deleteCloudinaryImages = async (imageUrls, folder) => {
+  // in future it should change to delete from cloudinary - where its getting called
   for (const imageUrl of imageUrls) {
     if (imageUrl) {
       try {
@@ -257,7 +255,8 @@ const createProperty = async (req, res) => {
         await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
       }
       if (req.files && req.files.thumbnailImage) {
-        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+        // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
       }
       return res.status(400).json({
         success: false,
@@ -290,7 +289,8 @@ const createProperty = async (req, res) => {
     if (mainImageUrls.length === 0) {
       // Clean up uploaded thumbnail if main images are missing
       if (thumbnailUrl) {
-        await deleteCloudinaryImages([thumbnailUrl], 'thumbnails');
+        await deleteCloudinaryImages([thumbnailUrl], 'main');
+        // await deleteCloudinaryImages([thumbnailUrl], 'thumbnails');
       }
       return res.status(400).json({
         success: false,
@@ -332,7 +332,8 @@ console.log("Creating property with data:",);
         await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
       }
       if (req.files.thumbnailImage) {
-        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+        // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
       }
     }
 
@@ -366,7 +367,8 @@ const updateProperty = async (req, res) => {
           await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
         }
         if (req.files.thumbnailImage) {
-          await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+          await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+          // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
         }
       }
       return res.status(404).json({
@@ -389,7 +391,8 @@ const updateProperty = async (req, res) => {
             await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
           }
           if (req.files.thumbnailImage) {
-            await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+            await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+            // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
           }
         }
         return res.status(400).json({
@@ -403,7 +406,8 @@ const updateProperty = async (req, res) => {
     if (req.files && req.files.thumbnailImage && req.files.thumbnailImage[0]) {
       // Delete old thumbnail
       if (property.iconImageThumbUrl) {
-        await deleteCloudinaryImages([property.iconImageThumbUrl], 'thumbnails');
+        await deleteCloudinaryImages([property.iconImageThumbUrl], 'main');
+        // await deleteCloudinaryImages([property.iconImageThumbUrl], 'thumbnails');
       }
       req.body.iconImageThumbUrl = req.files.thumbnailImage[0].path;
       const thumbnailUrl = req.body.iconImageThumbUrl ? generateThumbnailUrl(req.body.iconImageThumbUrl):"";
@@ -485,7 +489,8 @@ const updateProperty = async (req, res) => {
         await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
       }
       if (req.files.thumbnailImage) {
-        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+        // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
       }
     }
 
@@ -557,7 +562,8 @@ const uploadPropertyImages = async (req, res) => {
         await deleteCloudinaryImages(req.files.mainImages.map(file => file.path), 'main');
       }
       if (req.files.thumbnailImage) {
-        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
+        await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'main');
+        // await deleteCloudinaryImages(req.files.thumbnailImage.map(file => file.path), 'thumbnails');
       }
     }
 
@@ -587,7 +593,8 @@ const deleteProperty = async (req, res) => {
       await deleteCloudinaryImages(property.iconImageUrls, 'main');
     }
     if (property.iconImageThumbUrl) {
-      await deleteCloudinaryImages([property.iconImageThumbUrl], 'thumbnails');
+      await deleteCloudinaryImages([property.iconImageThumbUrl], 'main');
+      // await deleteCloudinaryImages([property.iconImageThumbUrl], 'thumbnails');
     }
 
     await Property.findByIdAndDelete(req.params.id);
