@@ -172,7 +172,7 @@ const getPropertyTypes = async (req, res) => {
     // If not admin, only show active property types
     if (req.user && req.user.userType !== "admin") {
       query.isActive = true;
-      query.createdBy = req.user.uid;
+      // query.createdBy = req.user.uid;
     }
 
 
