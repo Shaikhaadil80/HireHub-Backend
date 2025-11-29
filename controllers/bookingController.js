@@ -26,7 +26,7 @@ const createBooking = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!propertyId || !userName || !mobileNo || email || !bookforFromDateTime || !bookforToDateTime) {
+    if (!propertyId || !userName || !mobileNo || !bookforFromDateTime || !bookforToDateTime) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields"
