@@ -308,11 +308,114 @@ const checkUserProfileExists = async (req, res) => {
   }
 };
 
+
+
+// @desc    Delete user account (soft delete)
+// @route   DELETE /api/users/me
+// @access  Private (Firebase authenticated)
+const deleteUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User profile not found'
+      });
+    }
+
+    // Perform soft delete by marking as inactive
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        isActive: false,
+        deletedAt: Date.now(),
+        deletedBy: req.firebaseUser.uid,
+        updatedBy: req.firebaseUser.uid
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    // Optional: Clean up user data (depends on your business logic)
+    // You might want to:
+    // 1. Anonymize personal data
+    // 2. Remove sensitive information
+    // 3. Archive data for compliance
+    
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully',
+      data: {
+        userId: user._id,
+        deletedAt: user.deletedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while deleting account'
+    });
+  }
+};
+
+// @desc    Permanently delete user account (admin only)
+// @route   DELETE /api/users/:id/permanent
+// @access  Private (Admin only)
+const permanentDeleteUser = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.userType !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized. Admin access required'
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Delete user from database
+    await User.findByIdAndDelete(req.params.id);
+
+    // TODO: Add any additional cleanup logic
+    // - Delete associated files
+    // - Remove from cache
+    // - Log the action
+
+    res.status(200).json({
+      success: true,
+      message: 'User permanently deleted',
+      data: {
+        userId: user._id,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Permanent delete user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while permanently deleting user'
+    });
+  }
+};
+
 module.exports = {
   createUser,
   getCurrentUser,
   updateUser,
   checkUserExists,
   getUserById,
-  checkUserProfileExists
+  checkUserProfileExists,
+  deleteUser,
+  permanentDeleteUser // Optional, for admin use
 };

@@ -117,6 +117,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    deletedBy: {
+      type: String,
+      default: null,
+    },
 
     notificationPreferences: {
       bookingRequests: { type: Boolean, default: true },
