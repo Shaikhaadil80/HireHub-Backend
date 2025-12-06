@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { updateUserValidation } = require('../utils/validation');
+const admin = require('firebase-admin');
 
 // @desc    Create user profile after Firebase auth
 // @route   POST /api/users
@@ -310,7 +311,7 @@ const checkUserProfileExists = async (req, res) => {
 
 
 
-// @desc    Delete user account (soft delete)
+// @desc    Delete user account (soft delete + Firebase Auth)
 // @route   DELETE /api/users/me
 // @access  Private (Firebase authenticated)
 const deleteUser = async (req, res) => {
@@ -342,12 +343,14 @@ const deleteUser = async (req, res) => {
       }
     );
 
-    // Optional: Clean up user data (depends on your business logic)
-    // You might want to:
-    // 1. Anonymize personal data
-    // 2. Remove sensitive information
-    // 3. Archive data for compliance
-    
+    // Delete user from Firebase Authentication
+    try {
+      await admin.auth().deleteUser(req.firebaseUser.uid);
+    } catch (firebaseError) {
+      console.error('Error deleting user from Firebase Auth:', firebaseError);
+      // Optionally, you can return a warning but not fail the whole operation
+    }
+
     res.status(200).json({
       success: true,
       message: 'Account deleted successfully',
