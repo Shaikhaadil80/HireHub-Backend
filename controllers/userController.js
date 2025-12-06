@@ -331,6 +331,7 @@ const deleteUser = async (req, res) => {
         profileImageUrl: "",
         profileImageThumbUrl: "",
         mobileNo : "0000000000",
+        email : "deleted@email.com",
         deletedAt: Date.now(),
         deletedBy: req.firebaseUser.uid,
         updatedBy: req.firebaseUser.uid
