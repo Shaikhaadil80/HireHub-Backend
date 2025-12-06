@@ -327,6 +327,10 @@ const deleteUser = async (req, res) => {
       req.user._id,
       {
         isActive: false,
+        userName: "Deleted User",
+        profileImageUrl: "",
+        profileImageThumbUrl: "",
+        mobileNo : "0000000000",
         deletedAt: Date.now(),
         deletedBy: req.firebaseUser.uid,
         updatedBy: req.firebaseUser.uid
