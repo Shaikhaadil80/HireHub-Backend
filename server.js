@@ -75,6 +75,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+
+const privacyPolicyRoutes = require('./routes/privacyPolicyRoutes');
+app.use('/privacy-policy', privacyPolicyRoutes);
+// app.use('/api/privacy-policy', privacyPolicyRoutes);
 // Handle undefined routes
 app.all('*', (req, res) => {
   res.status(404).json({
