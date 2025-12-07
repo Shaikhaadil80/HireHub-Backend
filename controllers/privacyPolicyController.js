@@ -324,9 +324,9 @@ const getPrivacyPolicy = async (req, res) => {
                   <p>We typically respond within 2-3 business days.</p>
               </div>
               
-              <button class="back-button" onclick="window.ReactNativeWebView.postMessage('close')">
-                  <i class="fas fa-arrow-left"></i> Back to App
-              </button>
+            //   <button class="back-button" onclick="window.ReactNativeWebView.postMessage('close')">
+            //       <i class="fas fa-arrow-left"></i> Back to App
+            //   </button>
           </div>
           
           <script>
