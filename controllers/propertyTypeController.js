@@ -134,8 +134,9 @@ const getCustomerPropertyTypes = async (req, res) => {
     // Execute query with pagination
     const propertyTypes = await PropertyType.find(query)
       .sort(sort)
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      // .limit(limit * 1)
+      // .skip((page - 1) * limit)
+      ;
 
     // Get total count for pagination
     const total = await PropertyType.countDocuments(query);
